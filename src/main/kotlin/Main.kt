@@ -25,7 +25,9 @@ enum class Side{TOP,BOTTOM,LEFT,RIGHT}
 class ChildFollowsMousePanel(private val child: Component): JPanel() {
     private val originalSize: Dimension = child.size
     private var entrySide: Side = Side.TOP
-    private var scalingFactor = 1.0
+    /** The percentage of the children size that it is necessary
+     * to move the mouse from the side to reach maximum size */
+    private var scalingFactor = 0.5
 
     inner class MouseMoveListener(): MouseAdapter() {
         override fun mouseMoved(moved: MouseEvent) {
@@ -100,8 +102,15 @@ class ChildFollowsMousePanel(private val child: Component): JPanel() {
     }
 
     private fun updateChildrenSize(location: Point) {
-        val scaledWidth = originalSize.width*(distanceToEntrySide(location))/(scalingFactor*originalSize.width).toInt()
-        val scaledHeight = originalSize.height*(distanceToEntrySide(location))/(scalingFactor*originalSize.height).toInt()
+        val scaledWidth: Int
+        val scaledHeight: Int
+        if (scalingFactor > 0.0) {
+            scaledWidth = originalSize.width*(distanceToEntrySide(location))/(scalingFactor*originalSize.width/0.75).toInt()+originalSize.width/4
+            scaledHeight = originalSize.height*(distanceToEntrySide(location))/(scalingFactor*originalSize.height/0.75).toInt()+originalSize.height/4
+        } else {
+            scaledWidth = originalSize.width
+            scaledHeight = originalSize.height
+        }
         val scaledDimension = Dimension(scaledWidth, scaledHeight)
 
         if (scaledDimension.width > originalSize.width)
