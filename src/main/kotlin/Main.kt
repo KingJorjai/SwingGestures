@@ -14,20 +14,24 @@ enum class Side{TOP,BOTTOM,LEFT,RIGHT}
 class ChildFollowsMousePanel(private val child: Component): JPanel() {
 
     inner class MouseMoveListener(): MouseAdapter() {
-        override fun mouseMoved(e: MouseEvent) {
-            val relativePoint = SwingUtilities.convertPoint(e.component, e.point, this@ChildFollowsMousePanel)
+        override fun mouseMoved(moved: MouseEvent) {
+            val relativePoint = getRelativePoint(moved)
+            updateChildrenLocation(relativePoint)
 
-            this@ChildFollowsMousePanel.
-            child.location = Point(relativePoint.x-child.size.width/2, relativePoint.y-child.height/2)
+        }
+
+        override fun mouseDragged(dragged: MouseEvent) {
+            val relativePoint = getRelativePoint(dragged)
+            updateChildrenLocation(relativePoint)
         }
     }
 
     inner class MouseEnterListener(): MouseAdapter() {
-        override fun mouseEntered(e: MouseEvent) {
-            val relativePoint = SwingUtilities.convertPoint(e.component, e.point, this@ChildFollowsMousePanel)
+
+        override fun mouseEntered(entered: MouseEvent) {
+            val relativePoint = getRelativePoint(entered)
             println(closestSide(relativePoint))
         }
-
         /**
          * Finds the closest side of the panel to the given point.
          *
@@ -57,6 +61,14 @@ class ChildFollowsMousePanel(private val child: Component): JPanel() {
 
         add(child)
         layout = null
+    }
+
+    private fun getRelativePoint(e: MouseEvent): Point =
+        SwingUtilities.convertPoint(e.component, e.point, this@ChildFollowsMousePanel)
+
+    private fun updateChildrenLocation(location: Point) {
+        this@ChildFollowsMousePanel.child.location =
+            Point(location.x - child.size.width / 2, location.y - child.height / 2)
     }
 }
 
