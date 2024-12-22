@@ -5,7 +5,9 @@ import java.awt.Point
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.JFrame
+import javax.swing.JLabel
 import javax.swing.JPanel
+import javax.swing.SwingConstants
 import javax.swing.SwingUtilities
 import javax.swing.WindowConstants
 
@@ -21,16 +23,20 @@ enum class Side{TOP,BOTTOM,LEFT,RIGHT}
  * @property child The child component that follows the mouse movement.
  */
 class ChildFollowsMousePanel(private val child: Component): JPanel() {
+    private val originalSize: Dimension = child.size
+    private var entrySide: Side = Side.TOP
+    private var scalingFactor = 1.0
 
     inner class MouseMoveListener(): MouseAdapter() {
         override fun mouseMoved(moved: MouseEvent) {
             val relativePoint = getRelativeMousePoint(moved)
+            updateChildrenSize(relativePoint)
             updateChildrenLocation(relativePoint)
-
         }
 
         override fun mouseDragged(dragged: MouseEvent) {
             val relativePoint = getRelativeMousePoint(dragged)
+            updateChildrenSize(relativePoint)
             updateChildrenLocation(relativePoint)
         }
     }
@@ -39,7 +45,8 @@ class ChildFollowsMousePanel(private val child: Component): JPanel() {
 
         override fun mouseEntered(entered: MouseEvent) {
             val relativePoint = getRelativeMousePoint(entered)
-            println(closestSide(relativePoint))
+            entrySide = closestSide(relativePoint)
+            println("Mouse entered: $entrySide")
         }
         /**
          * Finds the closest side of the panel to the given point.
@@ -90,6 +97,26 @@ class ChildFollowsMousePanel(private val child: Component): JPanel() {
      */
     private fun updateChildrenLocation(location: Point) {
         child.location = Point(location.x - child.size.width / 2, location.y - child.height / 2)
+    }
+
+    private fun updateChildrenSize(location: Point) {
+        val scaledWidth = originalSize.width*(distanceToEntrySide(location))/(scalingFactor*originalSize.width).toInt()
+        val scaledHeight = originalSize.height*(distanceToEntrySide(location))/(scalingFactor*originalSize.height).toInt()
+        val scaledDimension = Dimension(scaledWidth, scaledHeight)
+
+        if (scaledDimension.width > originalSize.width)
+            child.size = originalSize
+        else
+            child.size = scaledDimension
+    }
+
+    private fun distanceToEntrySide(point: Point): Int {
+        return when (entrySide) {
+            Side.TOP -> point.y
+            Side.BOTTOM -> size.height - point.y
+            Side.LEFT -> point.x
+            Side.RIGHT -> size.width - point.x
+        }
     }
 }
 
