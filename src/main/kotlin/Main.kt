@@ -11,17 +11,26 @@ import javax.swing.WindowConstants
 
 enum class Side{TOP,BOTTOM,LEFT,RIGHT}
 
+/**
+ * A custom [JPanel] that allows a child component to follow the mouse cursor.
+ *
+ * When the mouse moves within the panel or its child, the child component is repositioned
+ * so that its center aligns with the mouse cursor. Additionally, the closest side of the panel
+ * is determined when the mouse enters the panel.
+ *
+ * @property child The child component that follows the mouse movement.
+ */
 class ChildFollowsMousePanel(private val child: Component): JPanel() {
 
     inner class MouseMoveListener(): MouseAdapter() {
         override fun mouseMoved(moved: MouseEvent) {
-            val relativePoint = getRelativePoint(moved)
+            val relativePoint = getRelativeMousePoint(moved)
             updateChildrenLocation(relativePoint)
 
         }
 
         override fun mouseDragged(dragged: MouseEvent) {
-            val relativePoint = getRelativePoint(dragged)
+            val relativePoint = getRelativeMousePoint(dragged)
             updateChildrenLocation(relativePoint)
         }
     }
@@ -29,7 +38,7 @@ class ChildFollowsMousePanel(private val child: Component): JPanel() {
     inner class MouseEnterListener(): MouseAdapter() {
 
         override fun mouseEntered(entered: MouseEvent) {
-            val relativePoint = getRelativePoint(entered)
+            val relativePoint = getRelativeMousePoint(entered)
             println(closestSide(relativePoint))
         }
         /**
@@ -38,15 +47,15 @@ class ChildFollowsMousePanel(private val child: Component): JPanel() {
          * Calculates the distance from the point to each side (top, bottom, left, right)
          * and returns the side with the shortest distance.
          *
-         * @param p the point to evaluate.
+         * @param point the point to evaluate.
          * @return the [Side] enum value representing the closest side.
          */
-        fun closestSide(p: Point): Side {
+        fun closestSide(point: Point): Side {
             val distances = mapOf(
-                Side.TOP to p.y,
-                Side.BOTTOM to this@ChildFollowsMousePanel.height - p.y,
-                Side.LEFT to p.x,
-                Side.RIGHT to this@ChildFollowsMousePanel.width - p.x
+                Side.TOP to point.y,
+                Side.BOTTOM to this@ChildFollowsMousePanel.height - point.y,
+                Side.LEFT to point.x,
+                Side.RIGHT to this@ChildFollowsMousePanel.width - point.x
             )
 
             return distances.minByOrNull { it.value }!!.key
@@ -63,12 +72,24 @@ class ChildFollowsMousePanel(private val child: Component): JPanel() {
         layout = null
     }
 
-    private fun getRelativePoint(e: MouseEvent): Point =
-        SwingUtilities.convertPoint(e.component, e.point, this@ChildFollowsMousePanel)
+    /**
+     * Converts the mouse event's point from the source component's coordinate system to the [ChildFollowsMousePanel] coordinate system.
+     *
+     * @param event The mouse event containing the point to convert.
+     * @return The point relative to this panel.
+     */
+    private fun getRelativeMousePoint(event: MouseEvent): Point =
+        SwingUtilities.convertPoint(event.component, event.point, this)
 
+    /**
+     * Updates the location of the [child] component based on the given point.
+     *
+     * Positions the child component so that its center aligns with the specified location.
+     *
+     * @param location The point to align the center of the child component to.
+     */
     private fun updateChildrenLocation(location: Point) {
-        this@ChildFollowsMousePanel.child.location =
-            Point(location.x - child.size.width / 2, location.y - child.height / 2)
+        child.location = Point(location.x - child.size.width / 2, location.y - child.height / 2)
     }
 }
 
